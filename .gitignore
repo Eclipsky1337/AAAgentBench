@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[oc]
+*.pyd
+*.so
+
+# Build artifacts
+build/
+dist/
+wheels/
+*.egg-info/
+
+# Virtual environments
+.venv/
+
+# Tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Editor files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+
+#other
+design.md
+results/
