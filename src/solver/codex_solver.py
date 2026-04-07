@@ -144,10 +144,7 @@ class CodexSolver(BaseSolver):
             "exec",
             "--full-auto",
             "--skip-git-repo-check",
-            "--sandbox",
-            self.sandbox_mode,
-            "--cd",
-            str(workdir),
+            "--json",
             "--output-schema",
             str(schema_path),
             "--output-last-message",
@@ -165,12 +162,14 @@ class CodexSolver(BaseSolver):
             text=True,
             capture_output=True,
             check=False,
+            cwd=workdir,
         )
         logger.debug(
-            "Codex subprocess finished for target=%s attempt=%s returncode=%s",
+            "Codex subprocess finished for target=%s attempt=%s returncode=%s json output=%s",
             session.target.id,
             attempt,
             completed.returncode,
+            completed.stdout,
         )
 
         if completed.returncode != 0:
@@ -202,7 +201,6 @@ class CodexSolver(BaseSolver):
             "flag_format": session.target.flag_format,
             "connection_info": session.connection_info,
             "workdir": session.workdir,
-            "metadata": session.target.metadata,
         }
 
         prompt = [
@@ -222,6 +220,7 @@ class CodexSolver(BaseSolver):
             '- When outcome is "flag", set "flag" to the exact flag string.',
             '- When outcome is "give_up", set "flag" to null.',
             '- Include a short explanation in "summary" describing why you solved it or why you gave up.',
+            'IMPORTANT: Do not search for writeups of the challenge online.',
         ]
 
         if feedback:
