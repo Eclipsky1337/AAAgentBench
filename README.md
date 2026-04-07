@@ -57,6 +57,7 @@ Useful options:
 - `--solver`: select solver implementation
 - `--testcase`: run one target id
 - `--run-all`: run the whole selected split
+- `--category`: when used with `--run-all`, only run the selected category; can be passed multiple times
 - `--save-result`: save one testcase result locally
 - `--results-dir`: choose where local result files are stored
 - `--summary-from-results`: summarize saved testcase results without rerunning

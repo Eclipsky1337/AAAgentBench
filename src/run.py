@@ -45,6 +45,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Dataset split for the platform.",
     )
     parser.add_argument(
+        "--category",
+        action="append",
+        help="Filter targets by category when using --run-all. Can be passed multiple times.",
+    )
+    parser.add_argument(
         "--version",
         default=None,
         help="Dataset version for platforms that support it.",
@@ -121,6 +126,15 @@ def create_solver_from_args(args: argparse.Namespace):
     return create_solver(args.solver)
 
 
+def get_target_ids_for_run_all(args: argparse.Namespace, platform) -> list[str]:
+    targets = platform.list_targets()
+    if args.category is None:
+        return [target.id for target in targets]
+
+    categories = set(args.category)
+    return [target.id for target in targets if target.metadata.get("category") in categories]
+
+
 def get_result_path(args: argparse.Namespace) -> Path:
     return Path(args.results_dir) / args.platform / args.solver / f"{args.target_id}.json"
 
@@ -184,7 +198,7 @@ if __name__ == "__main__":
     solver = create_solver_from_args(args)
 
     if args.run_all:
-        target_ids = [target.id for target in platform.list_targets()]
+        target_ids = get_target_ids_for_run_all(args, platform)
         records = [
             run_or_load_record(
                 args=args,

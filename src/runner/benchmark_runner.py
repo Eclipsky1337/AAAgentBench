@@ -115,10 +115,17 @@ class BenchmarkRunner:
         platform: BasePlatform,
         solver: BaseSolver,
         target_ids: list[str] | None = None,
+        category: str | list[str] | None = None,
         timeout_sec: int = 1800,
     ):
         if target_ids is None:
-            target_ids = [target.id for target in platform.list_targets()]
+            targets = platform.list_targets()
+            if category is not None:
+                categories = {category} if isinstance(category, str) else set(category)
+                targets = [
+                    target for target in targets if target.metadata.get("category") in categories
+                ]
+            target_ids = [target.id for target in targets]
         logger.info("Starting benchmark suite total_targets=%s", len(target_ids))
 
         records = [
