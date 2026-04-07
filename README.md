@@ -27,6 +27,7 @@ uv run python -m src.run --help
 
 - `codex`: runs `codex exec` non-interactively and validates flags automatically
 - `manual`: simple interactive solver for testing
+- `pentagi`: uses PentAGI API to create/poll flows and auto-submit extracted flag candidates
 
 ## Usage
 
@@ -67,6 +68,28 @@ Useful options:
 - `--model`: model name for `codex`
 - `--max-attempts`: retry count for solvers that support it
 - `--sandbox-mode`: Codex sandbox mode
+- `--pentagi-api`: PentAGI API base URL (for `--solver pentagi`)
+- `--pentagi-user`: PentAGI login email
+- `--pentagi-pass`: PentAGI login password
+- `--pentagi-provider`: provider name used for flow creation, e.g. `custom`
+- `--pentagi-poll-interval-sec`: flow polling interval
+- `--pentagi-max-wait-sec`: max wait time per target
+- `--pentagi-verify-tls`: enable TLS verification (default is insecure for local self-signed certs)
+
+Run with PentAGI solver:
+
+```bash
+uv run python -m src.run \
+  --platform nyu \
+  --solver pentagi \
+  --testcase 2017q-web-historypeats \
+  --split test \
+  --timeout-sec 3600 \
+  --pentagi-api https://127.0.0.1:8443 \
+  --pentagi-user admin@pentagi.com \
+  --pentagi-pass admin \
+  --pentagi-provider custom
+```
 
 ## Adding a Solver
 

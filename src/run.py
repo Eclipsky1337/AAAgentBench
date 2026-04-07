@@ -78,6 +78,43 @@ def build_parser() -> argparse.ArgumentParser:
         help="Sandbox mode for Codex solver.",
     )
     parser.add_argument(
+        "--pentagi-api",
+        default="https://127.0.0.1:8443",
+        help="PentAGI API base URL for pentagi solver.",
+    )
+    parser.add_argument(
+        "--pentagi-user",
+        default="admin@pentagi.com",
+        help="PentAGI login email for pentagi solver.",
+    )
+    parser.add_argument(
+        "--pentagi-pass",
+        default="admin",
+        help="PentAGI login password for pentagi solver.",
+    )
+    parser.add_argument(
+        "--pentagi-provider",
+        default="custom",
+        help="Provider name used when creating PentAGI flows.",
+    )
+    parser.add_argument(
+        "--pentagi-poll-interval-sec",
+        type=float,
+        default=5.0,
+        help="Polling interval for PentAGI flow status.",
+    )
+    parser.add_argument(
+        "--pentagi-max-wait-sec",
+        type=int,
+        default=1800,
+        help="Max wait time per target for PentAGI flow completion.",
+    )
+    parser.add_argument(
+        "--pentagi-verify-tls",
+        action="store_true",
+        help="Enable TLS certificate verification for PentAGI API.",
+    )
+    parser.add_argument(
         "--save-result",
         action="store_true",
         help="Save single-target run results to the local results directory.",
@@ -117,6 +154,17 @@ def create_solver_from_args(args: argparse.Namespace):
             model=args.model,
             max_attempts=args.max_attempts,
             sandbox_mode=args.sandbox_mode,
+        )
+    if args.solver == "pentagi":
+        return create_solver(
+            args.solver,
+            pentagi_api=args.pentagi_api,
+            pentagi_user=args.pentagi_user,
+            pentagi_pass=args.pentagi_pass,
+            pentagi_provider=args.pentagi_provider,
+            pentagi_poll_interval_sec=args.pentagi_poll_interval_sec,
+            pentagi_max_wait_sec=args.pentagi_max_wait_sec,
+            pentagi_insecure_tls=not args.pentagi_verify_tls,
         )
     return create_solver(args.solver)
 
