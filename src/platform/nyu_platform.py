@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import shutil
+import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -44,6 +45,7 @@ class NyuPlatform(BasePlatform):
         logger.info("Preparing target id=%s", target.id)
         challenge_info = self.dataset.get(target.id)
         challenge = CTFChallenge(challenge_info, self.basedir)
+        self._ensure_docker_network("ctfnet")
         challenge.start_challenge_container()
         logger.info(
             "Started challenge container for target id=%s server=%s port=%s",
@@ -70,10 +72,20 @@ class NyuPlatform(BasePlatform):
             metadata=dict(target.metadata),
         )
 
+        execution_mode = "docker" if challenge.port else "static"
+        solver_host = "host.docker.internal" if challenge.port else None
+        target_url = None
+        if challenge.port:
+            scheme = "https" if "https" in (challenge.server_type or "").lower() else "http"
+            target_url = f"{scheme}://{solver_host}:{challenge.port}"
+
         connection_info = {
             "server_name": "localhost" if challenge.server_name else None,
             "port": challenge.port,
             "server_type": challenge.server_type,
+            "execution_mode": execution_mode,
+            "solver_host": solver_host,
+            "target_url": target_url,
         }
 
         return Session(
@@ -135,6 +147,30 @@ class NyuPlatform(BasePlatform):
         if not server_name:
             return description
         return description.replace(server_name, "localhost")
+
+    @staticmethod
+    def _ensure_docker_network(network_name: str) -> None:
+        inspect = subprocess.run(
+            ["docker", "network", "inspect", network_name],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if inspect.returncode == 0:
+            return
+
+        logger.info("Creating docker network %s for NYU challenge containers", network_name)
+        create = subprocess.run(
+            ["docker", "network", "create", network_name],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if create.returncode != 0:
+            raise RuntimeError(
+                f"Failed to create docker network {network_name}: "
+                f"{create.stderr.strip() or create.stdout.strip()}"
+            )
 
     @staticmethod
     def _copy_files(challenge: CTFChallenge, destination_dir: Path) -> list[str]:

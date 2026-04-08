@@ -88,6 +88,36 @@ def build_parser() -> argparse.ArgumentParser:
         help="Save single-target run results to the local results directory.",
     )
     parser.add_argument(
+        "--pentestgpt-container-name",
+        default="pentestgpt",
+        help="Docker container name for the PentestGPT solver.",
+    )
+    parser.add_argument(
+        "--pentestgpt-auth-mode",
+        default="openrouter",
+        help="Authentication mode passed to PentestGPT.",
+    )
+    parser.add_argument(
+        "--pentestgpt-shared-workspace-host-root",
+        default="/home/colemak/CTF-agent/PentestGPT/workspace/aaagentbench",
+        help="Host path mirrored into the PentestGPT container for static challenge files.",
+    )
+    parser.add_argument(
+        "--pentestgpt-shared-workspace-container-root",
+        default="/workspace/aaagentbench",
+        help="Container path corresponding to the shared static challenge workspace.",
+    )
+    parser.add_argument(
+        "--pentestgpt-anthropic-base-url",
+        default="http://127.0.0.1:3456",
+        help="ANTHROPIC_BASE_URL passed to PentestGPT.",
+    )
+    parser.add_argument(
+        "--pentestgpt-anthropic-auth-token",
+        default="test",
+        help="ANTHROPIC_AUTH_TOKEN passed to PentestGPT.",
+    )
+    parser.add_argument(
         "--results-dir",
         default="results",
         help="Directory used for saved single-target results and offline summaries.",
@@ -122,6 +152,18 @@ def create_solver_from_args(args: argparse.Namespace):
             model=args.model,
             max_attempts=args.max_attempts,
             sandbox_mode=args.sandbox_mode,
+        )
+    if args.solver == "pentestgpt":
+        return create_solver(
+            args.solver,
+            container_name=args.pentestgpt_container_name,
+            model=args.model,
+            auth_mode=args.pentestgpt_auth_mode,
+            shared_workspace_host_root=args.pentestgpt_shared_workspace_host_root,
+            shared_workspace_container_root=args.pentestgpt_shared_workspace_container_root,
+            anthropic_base_url=args.pentestgpt_anthropic_base_url,
+            anthropic_auth_token=args.pentestgpt_anthropic_auth_token,
+            command_timeout_sec=args.timeout_sec,
         )
     return create_solver(args.solver)
 
