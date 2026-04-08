@@ -27,6 +27,7 @@ uv run python -m src.run --help
 
 - `codex`: runs `codex exec` non-interactively and validates flags automatically
 - `manual`: simple interactive solver for testing
+- `pentestgpt`: runs the PentestGPT Docker container against NYU targets and validates any captured flags automatically
 
 ## Usage
 
@@ -65,9 +66,42 @@ Useful options:
 - `--split`: dataset split, usually `test` or `development`
 - `--timeout-sec`: per-target timeout
 - `--log-level`: logging verbosity
-- `--model`: model name for `codex`
+- `--model`: model name for `codex` or `pentestgpt`
 - `--max-attempts`: retry count for solvers that support it
 - `--sandbox-mode`: Codex sandbox mode
+
+### Using PentestGPT
+
+`pentestgpt` expects a running PentestGPT Docker container. For NYU targets:
+
+- service-backed challenges are exposed to PentestGPT as `http://host.docker.internal:<port>`
+- attachment-only challenges are mirrored into a shared workspace path under `/workspace/aaagentbench/<target_id>`
+- the NYU platform automatically creates the external `ctfnet` Docker network when required by challenge compose files
+
+Example runs:
+
+```bash
+uv run python -m src.run \
+  --platform nyu \
+  --solver pentestgpt \
+  --testcase 2021f-rev-maze \
+  --timeout-sec 300
+
+uv run python -m src.run \
+  --platform nyu \
+  --solver pentestgpt \
+  --testcase 2021f-cry-collision_course \
+  --timeout-sec 300
+```
+
+PentestGPT-specific options:
+
+- `--pentestgpt-container-name`: Docker container name, default `pentestgpt`
+- `--pentestgpt-auth-mode`: auth mode passed into the container, default `openrouter`
+- `--pentestgpt-shared-workspace-host-root`: host directory mirrored into the PentestGPT container for static targets
+- `--pentestgpt-shared-workspace-container-root`: container path for the shared workspace, default `/workspace/aaagentbench`
+- `--pentestgpt-anthropic-base-url`: `ANTHROPIC_BASE_URL` passed into PentestGPT
+- `--pentestgpt-anthropic-auth-token`: `ANTHROPIC_AUTH_TOKEN` passed into PentestGPT
 
 ## Adding a Solver
 
