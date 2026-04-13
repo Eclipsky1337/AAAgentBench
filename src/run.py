@@ -136,6 +136,19 @@ def build_parser() -> argparse.ArgumentParser:
         "Falls back to the PENTESTGPT_ANTHROPIC_AUTH_TOKEN environment variable.",
     )
     parser.add_argument(
+        "--pentestgpt-disallow-tool",
+        action="append",
+        default=[],
+        help="Disable a PentestGPT tool by name (e.g. WebSearch, WebFetch). "
+        "Can be passed multiple times.",
+    )
+    parser.add_argument(
+        "--pentestgpt-max-retries",
+        type=int,
+        default=100,
+        help="Maximum PentestGPT attempts when all found flags are incorrect (default: 100).",
+    )
+    parser.add_argument(
         "--results-dir",
         default="results",
         help="Directory used for saved single-target results and offline summaries.",
@@ -187,6 +200,8 @@ def create_solver_from_args(args: argparse.Namespace):
             anthropic_base_url=args.pentestgpt_anthropic_base_url,
             anthropic_auth_token=args.pentestgpt_anthropic_auth_token,
             command_timeout_sec=args.timeout_sec,
+            max_retries=args.pentestgpt_max_retries,
+            disallowed_tools=args.pentestgpt_disallow_tool,
         )
     return create_solver(args.solver)
 

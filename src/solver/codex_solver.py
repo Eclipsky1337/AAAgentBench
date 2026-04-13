@@ -20,6 +20,7 @@ class CodexSolver(BaseSolver):
         sandbox_mode: str = "workspace-write",
         extra_args: list[str] | None = None,
     ) -> None:
+        super().__init__()
         self.model = model
         self.max_attempts = max_attempts
         self.sandbox_mode = sandbox_mode

@@ -60,6 +60,8 @@ class BenchmarkRunner:
 
         if worker.is_alive():
             timed_out = True
+            if hasattr(solver, "request_stop"):
+                solver.request_stop()
         else:
             solve_result = result_holder.get("solve_result")
             error = result_holder.get("error")  # type: ignore[assignment]
