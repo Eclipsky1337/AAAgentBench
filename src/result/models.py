@@ -44,6 +44,7 @@ class RunRecord:
     submitted_flag: str | None
     error: str | None = None
     solver_stats: dict[str, Any] = field(default_factory=dict)
+    log_path: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

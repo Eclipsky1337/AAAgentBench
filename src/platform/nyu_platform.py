@@ -150,27 +150,28 @@ class NyuPlatform(BasePlatform):
 
     @staticmethod
     def _ensure_docker_network(network_name: str) -> None:
-        inspect = subprocess.run(
-            ["docker", "network", "inspect", network_name],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if inspect.returncode == 0:
-            return
-
-        logger.info("Creating docker network %s for NYU challenge containers", network_name)
-        create = subprocess.run(
-            ["docker", "network", "create", network_name],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if create.returncode != 0:
-            raise RuntimeError(
-                f"Failed to create docker network {network_name}: "
-                f"{create.stderr.strip() or create.stdout.strip()}"
+        try:
+            create = subprocess.run(
+                ["docker", "network", "create", network_name],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=30,
             )
+        except subprocess.TimeoutExpired:
+            raise RuntimeError(
+                f"Timed out creating docker network {network_name} — is the Docker daemon running?"
+            )
+        if create.returncode == 0:
+            logger.info("Created docker network %s for NYU challenge containers", network_name)
+            return
+        stderr = create.stderr.strip()
+        if "already exists" in stderr:
+            return
+        raise RuntimeError(
+            f"Failed to create docker network {network_name}: "
+            f"{stderr or create.stdout.strip()}"
+        )
 
     @staticmethod
     def _copy_files(challenge: CTFChallenge, destination_dir: Path) -> list[str]:

@@ -27,7 +27,7 @@ uv run python -m src.run --help
 
 - `codex`: runs `codex exec` non-interactively and validates flags automatically
 - `manual`: simple interactive solver for testing
-- `pentestgpt`: runs the PentestGPT Docker container against NYU targets and validates any captured flags automatically
+- `pentestgpt`: runs the PentestGPT Docker container in non-interactive mode against NYU targets and validates any captured flags automatically
 
 ## Usage
 
@@ -52,14 +52,29 @@ uv run python -m src.run \
   --split test
 ```
 
+Run all testcases listed in a file:
+
+```bash
+uv run python -m src.run \
+  --platform nyu \
+  --solver pentestgpt \
+  --target-list-file ./targets.txt \
+  --timeout-sec 300
+```
+
+The list file should contain one canonical target id per line. Blank lines and lines starting with `#` are ignored.
+
 Useful options:
 
 - `--platform`: select platform implementation
 - `--solver`: select solver implementation
 - `--testcase`: run one target id
+- `--target-list-file`: run all target ids listed in a text file
 - `--run-all`: run the whole selected split
 - `--category`: when used with `--run-all`, only run the selected category; can be passed multiple times
 - `--save-result`: save one testcase result locally
+- `--logs-dir`: choose where per-target runtime logs are stored
+- `--disable-run-logs`: disable per-target runtime logs
 - `--results-dir`: choose where local result files are stored
 - `--summary-from-results`: summarize saved testcase results without rerunning
 - `--force-rerun`: ignore cached saved results and rerun targets
@@ -72,10 +87,11 @@ Useful options:
 
 ### Using PentestGPT
 
-`pentestgpt` expects a running PentestGPT Docker container. For NYU targets:
+`pentestgpt` expects a running PentestGPT Docker container and invokes `pentestgpt --non-interactive` inside that container. Each AAAgentBench run uses a target-scoped workspace under `/workspace/aaagentbench/<target_id>`, and the solver clears that target directory before each run to avoid stale benchmark artifacts affecting results. For NYU targets:
 
-- service-backed challenges are exposed to PentestGPT as `http://host.docker.internal:<port>`
+- service-backed challenges are exposed to PentestGPT as `http://host.docker.internal:<port>` (on native Linux Docker Engine you may need to start the container with `--add-host=host.docker.internal:host-gateway` for this hostname to resolve)
 - attachment-only challenges are mirrored into a shared workspace path under `/workspace/aaagentbench/<target_id>`
+- PentestGPT is started with its process working directory set to that target-specific workspace so it stays scoped to the current challenge files
 - the NYU platform automatically creates the external `ctfnet` Docker network when required by challenge compose files
 
 Example runs:
@@ -102,6 +118,27 @@ PentestGPT-specific options:
 - `--pentestgpt-shared-workspace-container-root`: container path for the shared workspace, default `/workspace/aaagentbench`
 - `--pentestgpt-anthropic-base-url`: `ANTHROPIC_BASE_URL` passed into PentestGPT
 - `--pentestgpt-anthropic-auth-token`: `ANTHROPIC_AUTH_TOKEN` passed into PentestGPT
+
+Detailed runtime logs:
+
+- AAAgentBench writes one runtime log per target under `logs/<platform>/<solver>/<target_id>.log` by default
+- before each run, the solver clears the current target workspace under `/workspace/aaagentbench/<target_id>` so leftover files from earlier runs do not leak into the session
+- log lines are timestamped and preserve PentestGPT non-interactive CLI output, including the target/context banner, final walkthrough text, discovered flags, session id, and total cost
+- unlike the standalone raw runner, these logs are not guaranteed to contain raw event markers such as `[STATE]`, `[TOOL]`, or `[DONE]`
+- the saved result JSON also includes the `log_path` for each target
+
+Example with logs and saved results:
+
+```bash
+uv run python -m src.run \
+  --platform nyu \
+  --solver pentestgpt \
+  --target-list-file ./targets.txt \
+  --timeout-sec 300 \
+  --save-result \
+  --results-dir ./results \
+  --logs-dir ./logs
+```
 
 ## Adding a Solver
 

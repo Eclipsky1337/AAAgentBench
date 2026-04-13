@@ -4,6 +4,8 @@ import logging
 import threading
 import time
 
+from pathlib import Path
+
 from ..platform.base import BasePlatform
 from ..result.models import RunRecord
 from ..result.report import summarize_runs
@@ -13,6 +15,10 @@ logger = logging.getLogger(__name__)
 
 
 class BenchmarkRunner:
+    def __init__(self, logs_dir: str = "logs", enable_run_logs: bool = True) -> None:
+        self.logs_dir = Path(logs_dir)
+        self.enable_run_logs = enable_run_logs
+
     def run_target(
         self,
         platform: BasePlatform,
@@ -23,6 +29,10 @@ class BenchmarkRunner:
         logger.info("Starting benchmark run for target id=%s timeout_sec=%s", target_id, timeout_sec)
         target = platform.get_target(target_id)
         session = platform.prepare(target)
+        log_path = self._get_log_path(platform=platform, solver=solver, target_id=target_id)
+        if log_path is not None:
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            session.metadata["solver_log_path"] = str(log_path)
 
         started_at = time.monotonic()
         submitted_flag: str | None = None
@@ -66,6 +76,7 @@ class BenchmarkRunner:
                     duration_sec=duration_sec,
                     submitted_flag=submitted_flag,
                     error=None,
+                    log_path=str(log_path) if log_path is not None else None,
                 )
 
             if error is not None:
@@ -77,6 +88,7 @@ class BenchmarkRunner:
                     duration_sec=duration_sec,
                     submitted_flag=submitted_flag,
                     error=error,
+                    log_path=str(log_path) if log_path is not None else None,
                 )
 
             if solve_result is None:
@@ -88,6 +100,7 @@ class BenchmarkRunner:
                     duration_sec=duration_sec,
                     submitted_flag=submitted_flag,
                     error="Solver returned no result",
+                    log_path=str(log_path) if log_path is not None else None,
                 )
 
             solved = solve_result.status == "solved"
@@ -98,6 +111,7 @@ class BenchmarkRunner:
                 duration_sec=duration_sec,
                 submitted_flag=submitted_flag,
                 solver_stats=solve_result.stats,
+                log_path=str(log_path) if log_path is not None else None,
             )
             logger.info(
                 "Completed benchmark run for target id=%s status=%s duration_sec=%.2f",
@@ -109,6 +123,13 @@ class BenchmarkRunner:
         finally:
             platform.cleanup(session)
             logger.info("Finished cleanup after benchmark run for target id=%s", target_id)
+
+    def _get_log_path(self, platform: BasePlatform, solver: BaseSolver, target_id: str) -> Path | None:
+        if not self.enable_run_logs:
+            return None
+        platform_name = platform.__class__.__name__.removesuffix("Platform").lower()
+        solver_name = solver.__class__.__name__.removesuffix("Solver").lower()
+        return self.logs_dir / platform_name / solver_name / f"{target_id}.log"
 
     def run_all(
         self,
