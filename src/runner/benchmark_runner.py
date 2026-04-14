@@ -27,14 +27,29 @@ class BenchmarkRunner:
         timeout_sec: int,
     ) -> RunRecord:
         logger.info("Starting benchmark run for target id=%s timeout_sec=%s", target_id, timeout_sec)
-        target = platform.get_target(target_id)
-        session = platform.prepare(target)
+
         log_path = self._get_log_path(platform=platform, solver=solver, target_id=target_id)
+        started_at = time.monotonic()
+
+        try:
+            target = platform.get_target(target_id)
+            session = platform.prepare(target)
+        except Exception as exc:
+            duration_sec = time.monotonic() - started_at
+            logger.exception("Failed to prepare target id=%s", target_id)
+            return RunRecord(
+                target_id=target_id,
+                status="error",
+                solved=False,
+                duration_sec=duration_sec,
+                submitted_flag=None,
+                error=f"Platform prepare failed: {exc}",
+                log_path=str(log_path) if log_path is not None else None,
+            )
+
         if log_path is not None:
             log_path.parent.mkdir(parents=True, exist_ok=True)
             session.metadata["solver_log_path"] = str(log_path)
-
-        started_at = time.monotonic()
         submitted_flag: str | None = None
         solve_result = None
         error: str | None = None
