@@ -8,6 +8,7 @@ class ManualSolver(BaseSolver):
     """A minimal interactive solver for local smoke testing."""
 
     def solve(self, session: Session, submit_flag) -> SolveResult:
+        super().__init__()
         print(f"Target: {session.target.name}")
         print(session.target.description)
         print(f"Files: {session.target.files}")

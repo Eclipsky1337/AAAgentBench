@@ -7,10 +7,12 @@ from typing import Any
 from .base import BaseSolver
 from .codex_solver import CodexSolver
 from .manual_solver import ManualSolver
+from .pentestgpt_solver import PentestGPTSolver
 
 AVAILABLE_SOLVERS: dict[str, type[BaseSolver]] = {
     "codex": CodexSolver,
     "manual": ManualSolver,
+    "pentestgpt": PentestGPTSolver,
 }
 
 
@@ -27,5 +29,6 @@ __all__ = [
     "BaseSolver",
     "CodexSolver",
     "ManualSolver",
+    "PentestGPTSolver",
     "create_solver",
 ]
